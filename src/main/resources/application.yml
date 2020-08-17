@@ -1,0 +1,35 @@
+#应用名
+spring:
+  application:
+    name: geocube-boot
+
+#端口号
+server:
+  port: 8091
+
+#SparkAppSubmitParas
+sparkappparas:
+  sparkHome: /home/geocube/spark
+  master: spark://125.220.153.26:7077
+  mainClass:
+        maps:
+          ndwi: whu.edu.cn.application.spetralindices.NDWI
+          ndvi: whu.edu.cn.application.spetralindices.NDVI
+          ndbi: whu.edu.cn.application.spetralindices.NDBI
+          mndwi: whu.edu.cn.application.spetralindices.MNDWI
+          wofs: whu.edu.cn.application.timeseries.WOfS
+          waterChangeDetection: whu.edu.cn.application.timeseries.WaterChangeDetection
+          vegetationChangeDetection: whu.edu.cn.application.timeseries.VegetationChangeDetection
+  driverMemory: 4G
+  executorMemory: 8G
+  totalExecutorCores: 16
+  executorCores: 1
+  jarPath:
+      maps:
+        examples: /home/geocube/spark/examples/jars/spark-examples_2.11-2.4.3.jar
+        QueryTiles: /home/geocube/environment_test/TileQuery_Env/geocube.jar
+        ndwi: /home/geocube/environment_test/NDWI_Env/geocube.jar
+        geocube: /home/geocube/environment_test/geocube_core_jar/geocube.jar
+  deployMode: cluster
+  rpcMessageMaxSize: 512
+  kryoserializerBufferMax: 256m
