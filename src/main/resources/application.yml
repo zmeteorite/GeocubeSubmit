@@ -1,11 +1,87 @@
-#应用名
+server:
+  port: 8091
 spring:
-  application:
-    name: geocube-boot
+  profiles:
+    active: prod
 
+---
 #端口号
 server:
   port: 8091
+
+spring:
+  datasource:
+    postgres:
+      url: jdbc:postgresql://125.220.153.26:5432/geocube
+      username: geocube
+      password: ypfamily608
+      driver-class-name: org.postgresql.Driver
+  #应用名
+  application:
+    name: geocube-boot
+  profiles: dev
+  autoconfigure:
+    exclude: com.alibaba.druid.spring.boot.autoconfigure.DruidDataSourceAutoConfigure
+#  datasource:
+#    druid:
+#      web-stat-filter:
+#        enabled: true
+#        url-pattern: /*
+#        exclusions: '*.js,*.gif,*.jpg,*.bmp,*.png,*.css,*.ico,/druid/*'
+#      stat-view-servlet:
+#        enabled: true
+#        url-pattern: /druid/*
+#        reset-enable: false
+#        login-username: admin
+#        login-password: 123456
+#      remove-abandoned: true
+#      remove-abandoned-timeout: 1800
+#      log-abandoned: true
+#    dynamic:
+#      druid:
+#        filters: mergeStat,wall,logback
+#        initial-size: 5
+#        max-active: 50
+#        min-idle: 5
+#        max-wait: 6000
+#        validation-query: SELECT 'x'
+#        test-on-borrow: true
+#        test-on-return: true
+#        test-while-idle: true
+#        time-between-eviction-runs-millis: 60000
+#        min-evictable-idle-time-millis: 300000
+#      datasource:
+#        master:
+#          username: root
+#          password: zsf280833
+#          url: jdbc:mysql://localhost:3306/mysparkapp?serverTimezone=UTC
+#          driver-class-name: com.mysql.cj.jdbc.Driver
+#          schema:
+#            - classpath:/db/department.sql
+#          data:
+#            - classpath:/db/data.sql
+#        #多数据源配置
+#        postgres:
+#          url: jdbc:postgresql://localhost:5432/geois
+#          username: postgres
+#          password: zsf280833
+#          driver-class-name: org.postgresql.Driver
+
+#mybatis plus 设置
+mybatis-plus:
+  mapper-locations: classpath*:whu/edu/cn/**/xml/*Mapper.xml
+  global-config:
+    #关闭MP3.0自带的banner
+    banner: false
+    db-config:
+      #主键类型  0:"数据库ID自增",1:"该类型为未设置主键类型", 2:"用户输入ID",3:"全局唯一ID (数字类型唯一ID)", 4:"全局唯一ID UUID",5:"字符串全局唯一ID (idWorker 的字符串表示)";
+      id-type: 4
+      #默认数据库表下划线命名
+      table-underline: true
+  configuration:
+    #这个配置会将执行的sql打印出来，在开发或测试的时候可以用
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
 
 #SparkAppSubmitParas
 sparkappparas:
@@ -33,3 +109,75 @@ sparkappparas:
   deployMode: cluster
   rpcMessageMaxSize: 512
   kryoserializerBufferMax: 256m
+
+---
+server:
+  port: 8094
+spring:
+  profiles: prod
+  autoconfigure:
+    exclude: com.alibaba.druid.spring.boot.autoconfigure.DruidDataSourceAutoConfigure
+  datasource:
+    druid:
+      web-stat-filter:
+        enabled: true
+        url-pattern: /*
+        exclusions: '*.js,*.gif,*.jpg,*.bmp,*.png,*.css,*.ico,/druid/*'
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        reset-enable: false
+        login-username: admin
+        login-password: 123456
+      remove-abandoned: true
+      remove-abandoned-timeout: 1800
+      log-abandoned: true
+    dynamic:
+      druid:
+        filters: mergeStat,wall,logback
+        initial-size: 5
+        max-active: 50
+        min-idle: 5
+        max-wait: 6000
+        validation-query: SELECT 'x'
+        test-on-borrow: true
+        test-on-return: true
+        test-while-idle: true
+        time-between-eviction-runs-millis: 60000
+        min-evictable-idle-time-millis: 300000
+      datasource:
+        master:
+          url: jdbc:postgresql://125.220.153.26:5432/geocube
+          username: geocube
+          password: ypfamily608
+          driver-class-name: org.postgresql.Driver
+        #          username: root
+        #          password: zsf280833
+        #          url: jdbc:mysql://localhost:3306/mysparkapp?serverTimezone=UTC
+        #          driver-class-name: com.mysql.cj.jdbc.Driver
+        #          schema:
+        #            - classpath:/db/department.sql
+        #          data:
+        #            - classpath:/db/data.sql
+        #多数据源配置
+        postgres:
+          url: jdbc:postgresql://125.220.153.26:5432/geocube
+          username: geocube
+          password: ypfamily608
+          driver-class-name: org.postgresql.Driver
+#mybatis plus 设置
+mybatis-plus:
+  mapper-locations: classpath*:whu/edu/cn/**/xml/*Mapper.xml
+  #  mapper-locations: classpath*:Mapper/*.xml
+  global-config:
+    #关闭MP3.0自带的banner
+    banner: false
+    db-config:
+      #主键类型  0:"数据库ID自增",1:"该类型为未设置主键类型", 2:"用户输入ID",3:"全局唯一ID (数字类型唯一ID)", 4:"全局唯一ID UUID",5:"字符串全局唯一ID (idWorker 的字符串表示)";
+      id-type: 4
+      #默认数据库表下划线命名
+      table-underline: true
+  configuration:
+    #这个配置会将执行的sql打印出来，在开发或测试的时候可以用
+    #    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true

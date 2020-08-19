@@ -14,14 +14,14 @@ import scala.io.StdIn
  * @version 1.0
  */
 object HbaseUtil {
-//  System.setProperty("hadoop.home.dir", "/home/geocube/hadoop")
+  System.setProperty("hadoop.home.dir", "/home/geocube/hadoop")
   //  var zookeeperQuorum = "192.168.56.101"
   var zookeeperQuorum = "125.220.153.26"
   val configuration = HBaseConfiguration.create()
-  //  configuration.set(HConstants.ZOOKEEPER_QUORUM, zookeeperQuorum)
+//    configuration.set(HConstants.ZOOKEEPER_QUORUM, zookeeperQuorum)
   configuration.set(HConstants.ZOOKEEPER_QUORUM, "gisweb1:2181,gisweb3:2181,gisweb4:2181")
-  //  configuration.set(HConstants.ZOOKEEPER_QUORUM, "125.220.153.26,125.220.153.22,125.220.153.23")
-  //  configuration.set("hbase.master","gisweb1:60010");
+//    configuration.set(HConstants.ZOOKEEPER_QUORUM, "125.220.153.26,125.220.153.22,125.220.153.23")
+//    configuration.set("hbase.master","gisweb1:60010");
   //提高RPC通信时长
   configuration.set("hbase.rpc.timeout", "200000")
   //设置Scan缓存
@@ -32,16 +32,16 @@ object HbaseUtil {
   configuration.setInt("mapreduce.task.timeout", 60000);
   //configuration.set ("zookeeper.znode.parent", "/hbase-unsecure") //看情况有时候要加有时候不加
   val connection = ConnectionFactory.createConnection(configuration)
-  //println(connection)
+//  println(connection)
   val admin = connection.getAdmin
 
   def main(args: Array[String]): Unit = {
     //    createTable("hbase_raster",Array("tiles"))
     //    dropTable("hbase_raster")
     //insertTable("1", "i", "age", "22")
-    //    scanDataFromHTable("hbase_raster", "rasterData","metaData")
-        getRow("hbase_vector","Hainan_Daguangba_School_Vector_c4dde473-d024-4e54-a5b8-b2ddeb57ef5c")
-    getTileMeta("hbase_raster","14","rasterData","metaData")
+//        scanDataFromHTable("hbase_raster", "rasterData","metaData")
+//        getRow("hbase_vector","Hainan_Daguangba_School_Vector_c4dde473-d024-4e54-a5b8-b2ddeb57ef5c")
+    getTileMeta("hbase_raster","581","rasterData","metaData")
 //    getVectorCell("hbase_vector","fx_xx_ffd4bce2-3cfe-4453-980f-bd5ab4a61db1","vectorData","tile")
 //    getVectorMeta("hbase_vector","fx_xx_ffd4bce2-3cfe-4453-980f-bd5ab4a61db1","vectorData","metaData")
 //    getVectorTilesMeta("hbase_vector","fx_xx_ffd4bce2-3cfe-4453-980f-bd5ab4a61db1","vectorData","tilesMetaData")
@@ -133,6 +133,7 @@ object HbaseUtil {
   def getVectorCell(tableName: String,rowKey:String,family:String,col:String):String={
     val table = connection.getTable(TableName.valueOf(tableName))
     val get: Get = new Get(Bytes.toBytes(rowKey))
+    print(get)
     if(!get.isCheckExistenceOnly){
       get.addColumn(Bytes.toBytes(family),Bytes.toBytes(col))
       val result: Result = table.get(get)

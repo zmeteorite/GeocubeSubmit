@@ -28,8 +28,8 @@ object QueryVectorObjects{
     queryParams.setVectorProductName("Hainan_Daguangba_School_Vector")
     queryParams.setExtent(108.46494046724021, 18.073457222586285, 111.02181165740333, 20.2597805438586)
     queryParams.setTime("2013-01-01 02:30:59.415", "2019-01-01 02:30:59.41")
-//    getVectorObjects(queryParams);
-    getVectorGeoJsons2(queryParams);
+    getVectorObjects(queryParams);
+//    getVectorGeoJsons2(queryParams);
 
   }
 

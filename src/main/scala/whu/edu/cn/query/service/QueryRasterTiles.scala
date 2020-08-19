@@ -64,8 +64,8 @@ object QueryRasterTiles {
     val queryBegin = System.currentTimeMillis()
 
     val queryParams = new QueryParams
-    queryParams.setRasterProductNames(Array("LC08_L1TP_ARD", "LC8_OLI_TIRS_ARD"))
-    queryParams.setExtent(119.46494046724021, 32.073457222586285, 122.02181165740333, 34.2597805438586)
+    queryParams.setRasterProductNames(Array("LC08_L1TP_ARD_EO", "LC8_L1TP_TMS_EO"))
+    queryParams.setExtent(112.46494046724021, 29.073457222586285, 115.02181165740333, 31.2597805438586)
     queryParams.setTime("2013-01-01 02:30:59.415", "2019-01-01 02:30:59.41")
     queryParams.setMeasurements(Array("Green", "Near-Infrared"))
 

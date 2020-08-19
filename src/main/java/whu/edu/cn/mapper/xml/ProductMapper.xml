@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="whu.edu.cn.mapper.ProductMapper">
+    <!--注意上面的namespace一定要修改-->
+
+<!--     通用查询映射结果-->
+<!--    <resultMap id="BaseResultMap" type="whu.edu.cn.entity.RsqGFProductInf">-->
+<!--        <id column="id" property="id" />-->
+<!--        <result column="productId" property="productId" />-->
+<!--    </resultMap>-->
+
+    <select id="selectProduct" resultType="whu.edu.cn.entity.Product">
+        select * from  "SensorLevelAndProduct";
+    </select>
+
+<!--    <select id="getProductsByParams" resultType="whu.edu.cn.entity.RsqGFProductInf" resultMap="BaseResultMap">-->
+<!--        select * from rsq_gf_product_inf where 1=1-->
+<!--        <if test="productName !='' and productName!=null">-->
+<!--            AND product_name = #{productName}-->
+<!--        </if>-->
+<!--        <if test="startTime !=null ">-->
+<!--            AND receive_time > #{startTime}-->
+<!--        </if>-->
+<!--        <if test="endTime!=null">-->
+<!--            AND  #{endTime}>receive_time-->
+<!--        </if>-->
+<!--        <if test="WKT!=null and WKT!=''">-->
+<!--            AND ST_Intersects(geom,'SRID=4326;${WKT}')-->
+<!--        </if>-->
+<!--    </select>-->
+
+    <select id="getProductsByParams" resultType="whu.edu.cn.entity.Product">
+        select * from "SensorLevelAndProduct" where 1=1
+        <if test="productName !='' and productName!=null">
+            AND product_name = #{productName}
+        </if>
+        <if test="startTime!=null ">
+            AND phenomenon_time > #{startTime}
+        </if>
+        <if test="endTime!=null">
+            AND  #{endTime}>phenomenon_time
+        </if>
+        <if test="WKT!=null and WKT!=''">
+            AND ST_Intersects(geom,'SRID=4326;${WKT}')
+        </if>
+    </select>
+
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
