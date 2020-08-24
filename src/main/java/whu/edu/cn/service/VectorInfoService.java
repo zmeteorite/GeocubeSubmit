@@ -21,7 +21,11 @@ public class VectorInfoService {
     public List<JsonNode> queryVectorJsons(String vectorProductName,Double minx,Double miny,Double maxx,Double maxy,String startTime,String endTime){
         QueryParams queryParams = new QueryParams();
         queryParams.setVectorProductName(vectorProductName);
-        queryParams.setExtent(minx,miny,maxx,maxy);
+        if(minx==-180.0&&miny==-90.0&&maxx==180.0&&maxy==90.0){
+            System.out.println("不设置空间范围");
+        } else {
+            queryParams.setExtent(minx,miny,maxx,maxy);
+        }
         queryParams.setTime(startTime,endTime);
 
         List<String> jsons = QueryVectorObjects.getVectorGeoJsons2(queryParams);

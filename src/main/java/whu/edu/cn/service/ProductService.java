@@ -2,6 +2,7 @@ package whu.edu.cn.service;
 
 import com.baomidou.dynamic.datasource.annotation.DS;
 import org.springframework.beans.factory.annotation.Autowired;
+import whu.edu.cn.dao.NameDao;
 import whu.edu.cn.entity.Extent;
 import whu.edu.cn.entity.MeasurementName;
 import whu.edu.cn.entity.Product;
@@ -34,12 +35,12 @@ public class ProductService {
     }
 
     public List<Product> getproductsbyname(String ProductName){
-        List<Product> products=productMapper.getProductsByName(ProductName);
+        List<Product> products=productMapper.getEOProductsByName(ProductName);
         products.forEach(product -> product.setMeasurements(productMapper.getMeasurements(Integer.parseInt(product.getProductKey()))));
         return products;
     }
 
-    public List<String> getallproductnames(){
+    public List<NameDao> getallproductnames(){
         return productMapper.getAllProductNames();
     }
 
@@ -51,10 +52,4 @@ public class ProductService {
         return  products;
     }
 
-    public List<Product> getproductsbyparams2(String ProductName, Timestamp StartTime, Timestamp EndTime,String WKT,String MeasurementName) {
-        List<Product> products = productMapper.getProductsByParams(ProductName,StartTime,EndTime,WKT);
-        System.out.println(MeasurementName);
-        products.forEach(product -> product.setMeasurements(productMapper.getMeasurements(Integer.parseInt(product.getProductKey()))));
-        return  products;
-    }
 }

@@ -1,5 +1,7 @@
 package whu.edu.cn.controller;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -9,6 +11,8 @@ import javax.servlet.http.HttpSession;
 import java.text.ParseException;
 
 @RestController
+@RequestMapping("/Geocube")
+@Api(tags = "瓦片查询")
 public class RasterTileController {
     static final String paramsPath = "/home/geocube/data/conf/requestParams";
 
@@ -16,7 +20,9 @@ public class RasterTileController {
     RasterTileService rasterTileService;
 
     //前台预先传递部分查询参数, 包括产品名、时间、波段, 后台写入配置文件
-    @RequestMapping(value = "/queryParams")
+    // @RequestMapping(value = "/queryParams")
+    @GetMapping(value = "/queryParams")
+    @ApiOperation(value = "瓦片请求预参数",notes = "将产品名、时间、波段, 后台写入配置文件")
     public String fixParams(@RequestParam(value = "rasterProductName", required = true) String rasterProductName,
                             @RequestParam(value = "time", required = true) String time,
                             @RequestParam(value = "measurement", required = true) String measurement,
@@ -30,8 +36,10 @@ public class RasterTileController {
     }
 
     //根据层、列、行空间信息,结合配置文件中参数, 实时返回瓦片png
-    @RequestMapping(value = "/getRasterTile/{z}/{x}/{y}.png",produces = MediaType.IMAGE_PNG_VALUE)
-    @ResponseBody
+    //@RequestMapping(value = "/getRasterTile/{z}/{x}/{y}.png",produces = MediaType.IMAGE_PNG_VALUE)
+    //@ResponseBody
+    @ApiOperation(value = "请求瓦片",notes = "根据层、列、行空间信息,结合配置文件参数")
+    @GetMapping(value = "/getRasterTile/{z}/{x}/{y}.png",produces = MediaType.IMAGE_PNG_VALUE)
     public byte[] getRasterTile(@PathVariable("z") int level,
                                 @PathVariable("x") int column,
                                 @PathVariable("y") int row,

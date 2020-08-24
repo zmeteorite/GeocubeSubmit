@@ -18,8 +18,8 @@ public class GeoUtil {
             List<Measurement> measurements= product.getMeasurements();
             if(measurements.size()>=1){
                 for(Measurement measurement:measurements){
-                    System.out.println(product.getProductName());
-                    System.out.println(measurement.getMeasurementName());
+//                    System.out.println(product.getProductName());
+//                    System.out.println(measurement.getMeasurementName());
                     ProductDao productDao = new ProductDao();
                     productDao.setDType(measurement.getDType());
                     productDao.setMeasurementName(measurement.getMeasurementName());
@@ -58,7 +58,6 @@ public class GeoUtil {
 //        System.out.println(collect.values());
         List<ProductDao> productDaoReturn = new ArrayList<ProductDao>();
         for(List<ProductDao> productDaos1:collect.values()){
-            System.out.println(productDaos1.get(0));
             productDaoReturn.add(productDaos1.get(0));
         }
 //        productDaos.stream().collect(Collectors.groupingBy(e->fetchGroupKey(e)));

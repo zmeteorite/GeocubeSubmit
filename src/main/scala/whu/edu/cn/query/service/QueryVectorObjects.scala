@@ -26,10 +26,10 @@ object QueryVectorObjects{
   def main(args: Array[String]): Unit = {
     val queryParams = new QueryParams
     queryParams.setVectorProductName("Hainan_Daguangba_School_Vector")
-    queryParams.setExtent(108.46494046724021, 18.073457222586285, 111.02181165740333, 20.2597805438586)
+//    queryParams.setExtent(108.46494046724021, 18.073457222586285, 111.02181165740333, 20.2597805438586)
     queryParams.setTime("2013-01-01 02:30:59.415", "2019-01-01 02:30:59.41")
     getVectorObjects(queryParams);
-//    getVectorGeoJsons2(queryParams);
+    getVectorGeoJsons2(queryParams);
 
   }
 
@@ -647,7 +647,7 @@ object QueryVectorObjects{
 
           //          val geoJsons: ArrayBuffer[JsonObject] = new ArrayBuffer[JsonObject]()
           geoObjectKeys.foreach{geoObjectkey =>
-            println(geoObjectkey)
+//            println(geoObjectkey)
             val metaJson = getVectorMeta("hbase_vector", geoObjectkey, "vectorData", "metaData")
 //            ObjectMapper
             //            val featureStr = getVectorCell("hbase_vector", geoObjectkey, "vectorData", "metaData")
@@ -659,7 +659,149 @@ object QueryVectorObjects{
 
         }
         //        println(GridLayerGeoObjectArray.toArray)
-        println(VectorGeoJsonArray.toArray)
+//        println(VectorGeoJsonArray.toArray)
+        bufferAsJavaList(VectorGeoJsonArray)
+        //        VectorGeoJsonArray.toArray
+
+      }finally
+        conn.close()
+    }else
+      throw new RuntimeException("connection failed")
+
+  }
+
+  def getVectorGeoJsons3(p:QueryParams):java.util.List[String]={
+    val conn = DriverManager.getConnection(conn_str, "geocube", "ypfamily608")
+    //Product params
+    val vectorProductName = p.getVectorProductName
+
+    //Temporal params
+    val startTime = p.getStartTime
+    val endTime = p.getEndTime
+
+    //Spatial params
+    val gridCodes = p.getGridCodes
+    val cityCodes = p.getCityCodes
+    val cityNames = p.getCityNames
+    val provinceName = p.getProvinceName
+    val districtName = p.getDistrictName
+
+    //CRS
+    val crs = p.getCRS
+
+    if (conn != null) {
+      try{
+        val statement = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
+
+        //Product dimension
+        val productsql = new StringBuilder;
+        productsql ++= "Select DISTINCT product_key,phenomenon_time from \"gc_product\" where 1=1 "
+        if (vectorProductName != "") {
+          productsql ++= "AND product_name ="
+          productsql ++= "\'"
+          productsql ++= vectorProductName
+          productsql ++= "\'"
+        }
+        if (crs != "") {
+          productsql ++= "AND crs ="
+          productsql ++= "\'"
+          productsql ++= crs
+          productsql ++= "\'"
+        }
+        if(startTime != "" && endTime != ""){
+          productsql ++= " AND (phenomenon_time BETWEEN "
+          productsql ++= "\'"
+          productsql ++= startTime
+          productsql ++= "\'"
+          productsql ++= " AND"
+          productsql ++= "\'"
+          productsql ++= endTime
+          productsql ++= "\')"
+        }
+        println(productsql.toString())
+        val productResults = statement.executeQuery(productsql.toString());
+        val productKeys = new StringBuilder;
+        if (productResults.first()) {
+          productResults.previous()
+          productKeys ++= "("
+          while (productResults.next) {
+            productKeys ++= "\'"
+            productKeys ++= productResults.getString(1)
+            productKeys ++= "\',"
+          }
+          productKeys.deleteCharAt(productKeys.length - 1)
+          productKeys ++= ")"
+        } else {
+          return null
+          //throw new RuntimeException("No tiles in the query product: " + rasterProductName)
+          //message ++= "No tiles in the query product: " + rasterProductName
+        }
+        println("Product Query SQL: " + productsql)
+        println("Product Keys :" + productKeys)
+
+        val command = "Select tile_data_id,product_key,extent_key from gc_vector_tile_fact where " +
+            "AND product_key IN" + productKeys.toString() + ";"
+        println("Vector Fact Query SQL:" + command)
+
+        val geoObjectsIDResults = statement.executeQuery(command)
+        val geoObjectsAndDimensionKeys = new ArrayBuffer[Array[String]]()
+        if (geoObjectsIDResults.first()) {
+          geoObjectsIDResults.previous()
+          while (geoObjectsIDResults.next()) {
+            val keyArray = new Array[String](3)
+            keyArray(0) = geoObjectsIDResults.getString(1)
+            keyArray(1) = geoObjectsIDResults.getString(2)
+            keyArray(2) = geoObjectsIDResults.getString(3)
+            geoObjectsAndDimensionKeys.append(keyArray)
+          }
+        } else {
+          println("No vector objects of " + vectorProductName + " acquired!")
+        }
+
+        //        val VectorGeoJsonArray: ArrayBuffer[JsonObject] = new ArrayBuffer[JsonObject]()
+        val VectorGeoJsonArray: ArrayBuffer[String] = new ArrayBuffer[String]()
+        val fjson = new FeatureJSON()
+        geoObjectsAndDimensionKeys.foreach{ keys =>
+          println(keys(0))
+          val listString = keys(0)
+          val geoObjectKeys = listString.substring(listString.indexOf("(")+1,listString.indexOf(")")).split(", ")
+
+          val productKey = keys(1)
+          val sql = "select phenomenon_time from gc_product where product_key=" + productKey + ";"
+          val rs = statement.executeQuery(sql)
+          //矢量的时间
+          var time:Long ="20200101".toLong
+          val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+          if (rs.first()) {
+            rs.previous()
+            while (rs.next()) {
+              time = sdf.parse(rs.getString(1)).getTime
+            }
+          } else {
+            println("No vector time acquired!")
+          }
+          //获取第一个矢量的瓦片元信息得到col和row
+          val col_row =getVectorMeta("hbase_vector", geoObjectKeys(0), "vectorData", "tilesMetaData").dropRight(1).substring(1)
+          val json = new JsonParser()
+          val obj = json.parse(col_row).asInstanceOf[JsonObject]
+          val extent = json.parse(obj.get("extent").toString).asInstanceOf[JsonObject]
+          val (col, row) = (extent.get("column").toString.toInt, extent.get("row").toString.toInt)
+
+          //          val geoJsons: ArrayBuffer[JsonObject] = new ArrayBuffer[JsonObject]()
+          geoObjectKeys.foreach{geoObjectkey =>
+            println(geoObjectkey)
+            val metaJson = getVectorMeta("hbase_vector", geoObjectkey, "vectorData", "metaData")
+            //            ObjectMapper
+            //            val featureStr = getVectorCell("hbase_vector", geoObjectkey, "vectorData", "metaData")
+            val Json = json.parse(metaJson).asInstanceOf[JsonObject]
+            //            geoJsons.append(Json)
+            //            VectorGeoJsonArray.append(Json)
+            VectorGeoJsonArray.append(metaJson)
+          }
+
+        }
+        //        println(GridLayerGeoObjectArray.toArray)
+        //        println(VectorGeoJsonArray.toArray)
         bufferAsJavaList(VectorGeoJsonArray)
         //        VectorGeoJsonArray.toArray
 
