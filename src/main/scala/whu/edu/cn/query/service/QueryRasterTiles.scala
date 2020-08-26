@@ -16,6 +16,7 @@ import whu.edu.cn.query.entity.Product.getProductMetaByKey
 import whu.edu.cn.query.entity.{RasterTile, RasterTileLayerMetadata, SpaceTimeBandKey}
 import whu.edu.cn.query.entity
 import whu.edu.cn.query.entity.{QueryParams, RasterTile, RasterTileLayerMetadata, SpaceTimeBandKey}
+import whu.edu.cn.query.util.HbaseUtil
 import whu.edu.cn.query.util.HbaseUtil.{getTileCell, getTileMeta}
 import whu.edu.cn.query.util.TileSerializer.deserializeTileData
 
@@ -470,10 +471,12 @@ object QueryRasterTiles {
 
         val tileIDResults = statement.executeQuery(command)
         val tileAndDimensionKeys = new ArrayBuffer[Array[String]]()
+        val tileIDs = new ArrayBuffer[String]();
         if (tileIDResults.first()) {
           tileIDResults.previous()
           while (tileIDResults.next()) {
             val keyArray = new Array[String](5)
+            tileIDs.append(tileIDResults.getString(1))
             keyArray(0) = tileIDResults.getString(1)
             keyArray(1) = tileIDResults.getString(2)
             keyArray(2) = tileIDResults.getString(3)
@@ -485,9 +488,11 @@ object QueryRasterTiles {
           println("No tiles of " + rasterProductName + " acquired!")
         }
 
-        val queriedRasterTiles = ArrayBuffer[RasterTile]()
-        tileAndDimensionKeys.foreach(keys => queriedRasterTiles.append(initRasterTile(keys(0), keys(1), keys(2), keys(3), keys(4))))
-
+        var queriedRasterTiles = ArrayBuffer[RasterTile]()
+        val CellMap = HbaseUtil.getTileCellsMap(tileIDs,"hbase_raster","rasterData","tile")
+        val MetaMap = HbaseUtil.getTileMetasMap(tileIDs,"hbase_raster","rasterData","metaData")
+//        tileAndDimensionKeys.foreach(keys => queriedRasterTiles.append(initRasterTile(keys(0), keys(1), keys(2), keys(3), keys(4))))
+        queriedRasterTiles=initRasterTiles(CellMap,MetaMap,tileAndDimensionKeys)
         println("Return " + queriedRasterTiles.length + " tiles of " + rasterProductName + " product: ")
         queriedRasterTiles.foreach(x=>print("{tile:{ID:" + x.ID + ", ProductID:" + x.productID + "}}"))
         println()
@@ -547,7 +552,56 @@ object QueryRasterTiles {
     rasterTile.setData(tileData)
     rasterTile
   }
+  def initRasterTile2(ID: String, productKey: String, MeasurmentKey: String, TileMeta: String, TileBytes: Array[Byte]): RasterTile = {
+    val rasterTile = RasterTile(ID, productKey)
+    //println("<********TileID/Key = " + ID + "********>")
+    //Tile meta stored in postgre
+    val productMeta = getProductMetaByKey(productKey, conn_str, "geocube", "ypfamily608")
+    val measurementMeta = getMeasurementMetaByMeaAndProKey(MeasurmentKey, productKey, conn_str, "geocube", "ypfamily608")
 
+    rasterTile.setProductMeta(productMeta)
+    rasterTile.setMeasurement(measurementMeta)
+
+
+    //Tile bytes and meta stored in HBase
+    val tileMeta = TileMeta
+    val tileBytes = TileBytes
+
+    val json = new JsonParser()
+    val obj = json.parse(tileMeta).asInstanceOf[JsonObject]
+    rasterTile.setCRS(obj.get("cRS").toString)
+    rasterTile.setColNum(obj.get("column").toString)
+    rasterTile.setRowNum(obj.get("row").toString)
+
+    val trueDataWKT = obj.get("trueDataWKT").toString.replace("\"", "")
+    val reader = new WKTReader
+    val polygon = reader.read(trueDataWKT)
+    val envelope = polygon.getEnvelopeInternal
+    rasterTile.setLeftBottomLong(envelope.getMinX.toString)
+    rasterTile.setLeftBottomLat(envelope.getMinY.toString)
+    rasterTile.setRightUpperLong(envelope.getMaxX.toString)
+    rasterTile.setRightUpperLat(envelope.getMaxY.toString)
+
+    val dType = obj.get("cellType").toString.replace("\"", "")
+    //assert(obj.get("cellType").toString.replace("\"", "") == rasterTile.getMeasurement.getMeasurementDType)
+
+    /* println("Other meta of the queried tile stored in HBase:")
+     println("tileCRS:" + rasterTile.CRS,
+       "dType:" + dType,
+       "(column,row):" + (rasterTile.colNum, rasterTile.rowNum),
+       "trueDataRange:" + (rasterTile.leftBottomLong, rasterTile.leftBottomLat, rasterTile.rightUpperLong, rasterTile.rightUpperLat))*/
+
+    val tileData = deserializeTileData(rasterTile.getProductMeta.getPlatform, tileBytes, rasterTile.getProductMeta.tilesize.toInt, dType)
+    //val tileData = deserializeTileData(rasterTile.getProductMeta.getPlatform, tileBytes, 1024, dType)
+    rasterTile.setData(tileData)
+    rasterTile
+  }
+
+  def initRasterTiles(TileMap:Map[String,Array[Byte]],MetaMap:Map[String,String],DimensionKeys:ArrayBuffer[Array[String]]):ArrayBuffer[RasterTile]={
+    val queriedRasterTiles = ArrayBuffer[RasterTile]()
+    DimensionKeys.foreach(keys => queriedRasterTiles.append(initRasterTile2(keys(0), keys(1), keys(2), MetaMap(keys(0)),TileMap(keys(0)))))
+    queriedRasterTiles
+  }
 
   def makeLayerArrayWithMeta(rasterTiles:ArrayBuffer[RasterTile]):(Array[(SpaceTimeBandKey, Tile)], RasterTileLayerMetadata[SpaceTimeKey]) ={
     val layer:ArrayBuffer[(SpaceTimeBandKey,Tile)] = makeLayer(rasterTiles)

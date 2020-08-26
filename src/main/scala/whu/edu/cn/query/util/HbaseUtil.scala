@@ -6,6 +6,7 @@ import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.hadoop.hbase._
 
+import scala.collection.mutable.ArrayBuffer
 import scala.io.StdIn
 
 /**
@@ -41,11 +42,14 @@ object HbaseUtil {
     //insertTable("1", "i", "age", "22")
 //        scanDataFromHTable("hbase_raster", "rasterData","metaData")
 //        getRow("hbase_vector","Hainan_Daguangba_School_Vector_c4dde473-d024-4e54-a5b8-b2ddeb57ef5c")
-    getTileMeta("hbase_raster","581","rasterData","metaData")
+//    getTileMeta("hbase_raster","581","rasterData","metaData")
 //    getVectorCell("hbase_vector","fx_xx_ffd4bce2-3cfe-4453-980f-bd5ab4a61db1","vectorData","tile")
 //    getVectorMeta("hbase_vector","fx_xx_ffd4bce2-3cfe-4453-980f-bd5ab4a61db1","vectorData","metaData")
 //    getVectorTilesMeta("hbase_vector","fx_xx_ffd4bce2-3cfe-4453-980f-bd5ab4a61db1","vectorData","tilesMetaData")
     //    deleteRecord("1","i","name")
+    getRow("hbase_raster","578")
+    val rowlist = ArrayBuffer("575","576","578","579","580","581","582","582")
+    getTileCellsMap(rowlist,"hbase_raster","rasterData","tile")
     close()
     println("Hit enter to exit")
     StdIn.readLine()
@@ -99,13 +103,57 @@ object HbaseUtil {
       throw new RuntimeException("No data of rowkey = " + rowKey + " in HBase!")
     }
   }
+  //获取影像瓦片list
+  @throws[IOException]
+  def getTileCellsMap(rowkeyList: ArrayBuffer[String],tableName: String,family:String,col:String): Map[String,Array[Byte]] = {
+    val getList = new ArrayBuffer[Get]()
+    var index = 0
+    var resultMap = Map[String,Array[Byte]]()
+    val table = connection.getTable(TableName.valueOf(tableName)) // 获取表
+    import scala.collection.JavaConversions._
+    for (rowkey <- rowkeyList) { //把rowkey加到get里，再把get装到list中
+      val get = new Get(Bytes.toBytes(rowkey))
+      getList.add(get)
+    }
+    val results = table.get(getList) //重点在这，直接查getList<Get>
+    for (result <- results) { //对返回的结果集进行操作
+      val res = result.getValue(Bytes.toBytes(family),Bytes.toBytes(col))
+      resultMap += (rowkeyList.get(index)->res)
+      index+=1
+    }
+    println(resultMap.keys)
+    println(resultMap.values)
+    resultMap
+  }
+
+  //获取影像元信息list
+  def getTileMetasMap(rowkeyList: ArrayBuffer[String],tableName: String,family:String,col:String): Map[String,String] = {
+    val getList = new ArrayBuffer[Get]()
+    var index = 0
+    var resultMap = Map[String,String]()
+    val table = connection.getTable(TableName.valueOf(tableName)) // 获取表
+    import scala.collection.JavaConversions._
+    for (rowkey <- rowkeyList) { //把rowkey加到get里，再把get装到list中
+      val get = new Get(Bytes.toBytes(rowkey))
+      getList.add(get)
+    }
+    val results = table.get(getList) //重点在这，直接查getList<Get>
+    for (result <- results) { //对返回的结果集进行操作
+      val res =  Bytes.toString(result.getValue(Bytes.toBytes(family),Bytes.toBytes(col)))
+      resultMap += (rowkeyList.get(index)->res)
+      index+=1
+    }
+    println(resultMap.keys)
+    println(resultMap.values)
+    resultMap
+  }
   //获取影像元信息
   def getTileCell(tableName: String,rowKey:String,family:String,col:String):Array[Byte]={
     val table = connection.getTable(TableName.valueOf(tableName))
-    val get: Get = new Get(Bytes.toBytes(rowKey))
+    val get = new Get(Bytes.toBytes(rowKey))
     if(!get.isCheckExistenceOnly){
       get.addColumn(Bytes.toBytes(family),Bytes.toBytes(col))
-      val result: Result = table.get(get)
+      val result = table.get(get)
       val res = result.getValue(Bytes.toBytes(family),Bytes.toBytes(col))
       res
     }else{
