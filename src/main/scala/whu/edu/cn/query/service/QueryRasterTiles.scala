@@ -13,9 +13,8 @@ import org.apache.spark.rdd.RDD
 import org.locationtech.jts.io.WKTReader
 import whu.edu.cn.query.entity.Measurement.getMeasurementMetaByMeaAndProKey
 import whu.edu.cn.query.entity.Product.getProductMetaByKey
-import whu.edu.cn.query.entity.{RasterTile, RasterTileLayerMetadata, SpaceTimeBandKey}
+import whu.edu.cn.query.entity.{Measurement, QueryParams, RasterTile, RasterTileLayerMetadata, SpaceTimeBandKey}
 import whu.edu.cn.query.entity
-import whu.edu.cn.query.entity.{QueryParams, RasterTile, RasterTileLayerMetadata, SpaceTimeBandKey}
 import whu.edu.cn.query.util.HbaseUtil
 import whu.edu.cn.query.util.HbaseUtil.{getTileCell, getTileMeta}
 import whu.edu.cn.query.util.TileSerializer.deserializeTileData
@@ -26,6 +25,9 @@ object QueryRasterTiles {
   val conn_str = "jdbc:postgresql://125.220.153.26:5432/geocube"
   Class.forName("org.postgresql.Driver")
   BasicConfigurator.configure()
+//  //  postgres数据连接
+//  val conn = DriverManager.getConnection(conn_str, "geocube", "ypfamily608")
+
 
   def main(args: Array[String]): Unit = {
 
@@ -65,10 +67,13 @@ object QueryRasterTiles {
     val queryBegin = System.currentTimeMillis()
 
     val queryParams = new QueryParams
-    queryParams.setRasterProductNames(Array("LC08_L1TP_ARD_EO", "LC8_L1TP_TMS_EO"))
+//    queryParams.setRasterProductNames(Array("LC08_L1TP_ARD_EO", "LC8_L1TP_TMS_EO"))
+    queryParams.setRasterProductNames(Array("LC08_L1TP_ARD_EO"))
     queryParams.setExtent(112.46494046724021, 29.073457222586285, 115.02181165740333, 31.2597805438586)
     queryParams.setTime("2013-01-01 02:30:59.415", "2019-01-01 02:30:59.41")
-    queryParams.setMeasurements(Array("Green", "Near-Infrared"))
+    queryParams.setMeasurements(Array("Green", "Near-Infrared","Red","Blue"))
+
+
 
     //queryParams.setLevel("999") //默认为999
     val tileLayerArrayWithMeta:(Array[(SpaceTimeBandKey, Tile)],RasterTileLayerMetadata[SpaceTimeKey]) = getTiles(queryParams)
@@ -489,10 +494,12 @@ object QueryRasterTiles {
         }
 
         var queriedRasterTiles = ArrayBuffer[RasterTile]()
-        val CellMap = HbaseUtil.getTileCellsMap(tileIDs,"hbase_raster","rasterData","tile")
-        val MetaMap = HbaseUtil.getTileMetasMap(tileIDs,"hbase_raster","rasterData","metaData")
+//        val CellMap = HbaseUtil.getTileCellsMap(tileIDs,"hbase_raster_regions","rasterData","tile")
+//        val MetaMap = HbaseUtil.getTileMetasMap(tileIDs,"hbase_raster_regions","rasterData","metaData")
+        var DataMap = HbaseUtil.getTileData("hbase_raster_regions",tileIDs)
 //        tileAndDimensionKeys.foreach(keys => queriedRasterTiles.append(initRasterTile(keys(0), keys(1), keys(2), keys(3), keys(4))))
-        queriedRasterTiles=initRasterTiles(CellMap,MetaMap,tileAndDimensionKeys)
+//        queriedRasterTiles=initRasterTiles(CellMap,MetaMap,tileAndDimensionKeys)
+        queriedRasterTiles=initRasterTiles2(DataMap,tileAndDimensionKeys)
         println("Return " + queriedRasterTiles.length + " tiles of " + rasterProductName + " product: ")
         queriedRasterTiles.foreach(x=>print("{tile:{ID:" + x.ID + ", ProductID:" + x.productID + "}}"))
         println()
@@ -509,8 +516,16 @@ object QueryRasterTiles {
     val rasterTile = RasterTile(ID, productKey)
     //println("<********TileID/Key = " + ID + "********>")
     //Tile meta stored in postgre
-    val productMeta = getProductMetaByKey(productKey, conn_str, "geocube", "ypfamily608")
-    val measurementMeta = getMeasurementMetaByMeaAndProKey(MeasurmentKey, productKey, conn_str, "geocube", "ypfamily608")
+      val conn = DriverManager.getConnection(conn_str, "geocube", "ypfamily608")
+    val productMeta = getProductMetaByKey(productKey, conn)
+    val measurementlist = productMeta.getMeasurements
+    var measurementMeta = new Measurement()
+    for(measurement<-measurementlist){
+      if(measurement.getMeasurementID==MeasurmentKey){
+        measurementMeta = measurement
+      }
+    }
+    //val measurementMeta = getMeasurementMetaByMeaAndProKey(MeasurmentKey, productKey, conn)
     //val extentMeta = getExtentMetaByKey(ExtentKey, conn_str, "geocube", "ypfamily608")
     //val qualitymeta = getTileQualityMetaByKey(QualityKey, conn_str, "geocube", "ypfamily608")
 
@@ -520,8 +535,8 @@ object QueryRasterTiles {
     //rasterTile.setTileQualityMeta(qualitymeta)
 
     //Tile bytes and meta stored in HBase
-    val tileMeta = getTileMeta("hbase_raster", ID, "rasterData", "metaData")
-    val tileBytes = getTileCell("hbase_raster", ID, "rasterData", "tile")
+    val tileMeta = getTileMeta("hbase_raster_regions", ID, "rasterData", "metaData")
+    val tileBytes = getTileCell("hbase_raster_regions", ID, "rasterData", "tile")
 
     val json = new JsonParser()
     val obj = json.parse(tileMeta).asInstanceOf[JsonObject]
@@ -555,10 +570,18 @@ object QueryRasterTiles {
   def initRasterTile2(ID: String, productKey: String, MeasurmentKey: String, TileMeta: String, TileBytes: Array[Byte]): RasterTile = {
     val rasterTile = RasterTile(ID, productKey)
     //println("<********TileID/Key = " + ID + "********>")
-    //Tile meta stored in postgre
-    val productMeta = getProductMetaByKey(productKey, conn_str, "geocube", "ypfamily608")
-    val measurementMeta = getMeasurementMetaByMeaAndProKey(MeasurmentKey, productKey, conn_str, "geocube", "ypfamily608")
-
+    //Tile meta stored in postgres
+//    val conn_str = "jdbc:postgresql://125.220.153.26:5432/geocube"
+//    Class.forName("org.postgresql.Driver")
+//    BasicConfigurator.configure()
+    //  postgres数据连接
+    val conn = DriverManager.getConnection(conn_str, "geocube", "ypfamily608")
+    val productMeta = getProductMetaByKey(productKey, conn)
+//    val measurementMeta = getMeasurementMetaByMeaAndProKey(MeasurmentKey, productKey, conn)
+    val measurementlist = productMeta.getMeasurements
+    val measurementMeta = measurementlist.filter(measuremnt=>measuremnt.getMeasurementID==MeasurmentKey).head
+//    println(measurementMeta.getMeasurementName)
+//    var measurementMeta = new Measurement()
     rasterTile.setProductMeta(productMeta)
     rasterTile.setMeasurement(measurementMeta)
 
@@ -600,6 +623,11 @@ object QueryRasterTiles {
   def initRasterTiles(TileMap:Map[String,Array[Byte]],MetaMap:Map[String,String],DimensionKeys:ArrayBuffer[Array[String]]):ArrayBuffer[RasterTile]={
     val queriedRasterTiles = ArrayBuffer[RasterTile]()
     DimensionKeys.foreach(keys => queriedRasterTiles.append(initRasterTile2(keys(0), keys(1), keys(2), MetaMap(keys(0)),TileMap(keys(0)))))
+    queriedRasterTiles
+  }
+  def initRasterTiles2(DataMap:Map[String,(Array[Byte],String)],DimensionKeys:ArrayBuffer[Array[String]]):ArrayBuffer[RasterTile]={
+    val queriedRasterTiles = ArrayBuffer[RasterTile]()
+    DimensionKeys.foreach(keys => queriedRasterTiles.append(initRasterTile2(keys(0), keys(1), keys(2), DataMap(keys(0))._2,DataMap(keys(0))._1)))
     queriedRasterTiles
   }
 

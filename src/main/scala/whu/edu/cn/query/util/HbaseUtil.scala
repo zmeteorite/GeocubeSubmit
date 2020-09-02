@@ -37,19 +37,22 @@ object HbaseUtil {
   val admin = connection.getAdmin
 
   def main(args: Array[String]): Unit = {
-    //    createTable("hbase_raster",Array("tiles"))
-    //    dropTable("hbase_raster")
+    //    createTable("hbase_raster_regions",Array("tiles"))
+    //    dropTable("hbase_raster_regions")
     //insertTable("1", "i", "age", "22")
-//        scanDataFromHTable("hbase_raster", "rasterData","metaData")
+//        scanDataFromHTable("hbase_raster_regions", "rasterData","metaData")
 //        getRow("hbase_vector","Hainan_Daguangba_School_Vector_c4dde473-d024-4e54-a5b8-b2ddeb57ef5c")
-//    getTileMeta("hbase_raster","581","rasterData","metaData")
+//    getTileMeta("hbase_raster_regions","000~0000000013","rasterData","metaData")
+//    getTileCell("hbase_raster_regions","000~0000000013","rasterData","tile")
 //    getVectorCell("hbase_vector","fx_xx_ffd4bce2-3cfe-4453-980f-bd5ab4a61db1","vectorData","tile")
 //    getVectorMeta("hbase_vector","fx_xx_ffd4bce2-3cfe-4453-980f-bd5ab4a61db1","vectorData","metaData")
 //    getVectorTilesMeta("hbase_vector","fx_xx_ffd4bce2-3cfe-4453-980f-bd5ab4a61db1","vectorData","tilesMetaData")
     //    deleteRecord("1","i","name")
-    getRow("hbase_raster","578")
-    val rowlist = ArrayBuffer("575","576","578","579","580","581","582","582")
-    getTileCellsMap(rowlist,"hbase_raster","rasterData","tile")
+//    getRow("hbase_raster_regions","000~0000000013")
+//    val rowlist = ArrayBuffer("000~0000000013","001~0000000014","002~0000000015","003~0000000016","004~0000000017","005~0000000018","006~0000000019","002~0000000020")
+    val rowlist = ArrayBuffer("000~0000000013","001~0000000014")
+    //    getTileCellsMap(rowlist,"hbase_raster_regions","rasterData","tile")
+    getTileData("hbase_raster_regions",rowlist)
     close()
     println("Hit enter to exit")
     StdIn.readLine()
@@ -89,6 +92,58 @@ object HbaseUtil {
     //通过scan取完数据后，记得要关闭ResultScanner，否则RegionServer可能会出现问题(对应的Server资源无法释放)
     scanner.close()
   }
+  def getTileData(tableName:String,rowkeyList: ArrayBuffer[String]):Map[String,(Array[Byte],String)]= {
+    val table = connection.getTable(TableName.valueOf(tableName)) // 获取表
+    var resultMap = Map[String, (Array[Byte], String)]()
+    val getList = new ArrayBuffer[Get]()
+    var cellIndex = 0
+    var metaIndex = 0
+    var cellMap = Map[String, Array[Byte]]()
+    var metaMap = Map[String, String]()
+    import scala.collection.JavaConversions._
+    for (rowkey <- rowkeyList) { //把rowkey加到get里，再把get装到list中
+      val get = new Get(Bytes.toBytes(rowkey))
+      getList.add(get)
+    }
+    val results = table.get(getList) //重点在这，直接查getList<Get>
+    for (result <- results) { //对返回的结果集进行操作
+      for (rowKv <- result.rawCells()) {
+
+        println("Family:" + new String(rowKv.getFamilyArray, rowKv.getFamilyOffset, rowKv.getFamilyLength))
+        println("Qualifier:" + new String(rowKv.getQualifierArray, rowKv.getQualifierOffset, rowKv.getQualifierLength))
+        println("TimeStamp:" + rowKv.getTimestamp)
+        println("rowkey:" + new String(rowKv.getRowArray, rowKv.getRowOffset, rowKv.getRowLength))
+        //      println("Value:" + new String(rowKv.getValueArray, rowKv.getValueOffset, rowKv.getValueLength, "UTF-8"))
+        //      println("Value:" +Bytes.toInt(rowKv.getValueArray,3))
+        val colName = Bytes.toString(rowKv.getQualifierArray, rowKv.getQualifierOffset, rowKv.getQualifierLength)
+//        val value = Bytes.toString(rowKv.getValueArray, rowKv.getValueOffset,rowKv.getValueLength)
+        println("colName:"+colName)
+//        println(value)
+
+        if(colName.equals("tile")){
+          println("equalsTile")
+//          var res= (rowKv.getValueArray, rowKv.getValueOffset,rowKv.getValueLength)
+          var res= rowKv.getValueArray
+          cellMap += (rowkeyList.get(cellIndex) -> res)
+          cellIndex += 1
+        }
+        else if(colName.equals("metaData")){
+          println("equalsMeta")
+          var res= Bytes.toString(rowKv.getValueArray, rowKv.getValueOffset,rowKv.getValueLength)
+          metaMap += (rowkeyList.get(metaIndex) -> res)
+          metaIndex += 1
+        }
+      }
+    }
+
+//    println(metaMap.keys)
+//    println(metaMap.values)
+    for(key<-rowkeyList){
+      resultMap+=(key->(cellMap(key),metaMap(key)))
+    }
+
+    return resultMap
+  }
   //获取影像元信息
   def getTileMeta(tableName: String,rowKey:String,family:String,col:String):String={
     val table = connection.getTable(TableName.valueOf(tableName))
@@ -97,7 +152,7 @@ object HbaseUtil {
       get.addColumn(Bytes.toBytes(family),Bytes.toBytes(col))
       val result: Result = table.get(get)
       val res = Bytes.toString(result.getValue(Bytes.toBytes(family),Bytes.toBytes(col)))
-      println(res)
+//      println(res)
       res
     }else{
       throw new RuntimeException("No data of rowkey = " + rowKey + " in HBase!")
@@ -121,8 +176,8 @@ object HbaseUtil {
       resultMap += (rowkeyList.get(index)->res)
       index+=1
     }
-    println(resultMap.keys)
-    println(resultMap.values)
+//    println(resultMap.keys)
+//    println(resultMap.values)
     resultMap
   }
 
@@ -143,8 +198,8 @@ object HbaseUtil {
       resultMap += (rowkeyList.get(index)->res)
       index+=1
     }
-    println(resultMap.keys)
-    println(resultMap.values)
+//    println(resultMap.keys)
+//    println(resultMap.values)
     resultMap
   }
   //获取影像元信息
@@ -155,6 +210,7 @@ object HbaseUtil {
       get.addColumn(Bytes.toBytes(family),Bytes.toBytes(col))
       val result = table.get(get)
       val res = result.getValue(Bytes.toBytes(family),Bytes.toBytes(col))
+//      println(res)
       res
     }else{
       throw new RuntimeException("No data of rowkey = " + rowKey + " in HBase!")
@@ -181,7 +237,7 @@ object HbaseUtil {
   def getVectorCell(tableName: String,rowKey:String,family:String,col:String):String={
     val table = connection.getTable(TableName.valueOf(tableName))
     val get: Get = new Get(Bytes.toBytes(rowKey))
-    print(get)
+//    print(get)
     if(!get.isCheckExistenceOnly){
       get.addColumn(Bytes.toBytes(family),Bytes.toBytes(col))
       val result: Result = table.get(get)
@@ -214,13 +270,23 @@ object HbaseUtil {
     val get: Get = new Get(Bytes.toBytes(rowKey))
     val result: Result = table.get(get)
     for (rowKv <- result.rawCells()) {
-      println("Famiily:" + new String(rowKv.getFamilyArray, rowKv.getFamilyOffset, rowKv.getFamilyLength, "UTF-8"))
-      println("Qualifier:" + new String(rowKv.getQualifierArray, rowKv.getQualifierOffset, rowKv.getQualifierLength, "UTF-8"))
+//      println("Family")
+//      println(rowKv.getFamilyArray)
+//      println( new String(rowKv.getFamilyArray, rowKv.getFamilyOffset, rowKv.getFamilyLength))
+//      println("Family:" + new String(rowKv.getFamilyArray, rowKv.getFamilyOffset, rowKv.getFamilyLength, "UTF-8"))
+//      println("Qualifier:" + new String(rowKv.getQualifierArray, rowKv.getQualifierOffset, rowKv.getQualifierLength, "UTF-8"))
+//      println("TimeStamp:" + rowKv.getTimestamp)
+//      println("rowkey:" + new String(rowKv.getRowArray, rowKv.getRowOffset, rowKv.getRowLength, "UTF-8"))
+      println("Family:" + new String(rowKv.getFamilyArray, rowKv.getFamilyOffset, rowKv.getFamilyLength))
+      println("Qualifier:" + new String(rowKv.getQualifierArray, rowKv.getQualifierOffset, rowKv.getQualifierLength))
       println("TimeStamp:" + rowKv.getTimestamp)
-      println("rowkey:" + new String(rowKv.getRowArray, rowKv.getRowOffset, rowKv.getRowLength, "UTF-8"))
-      println("Value:" + new String(rowKv.getValueArray, rowKv.getValueOffset, rowKv.getValueLength, "UTF-8"))
-      println("Value:" +Bytes.toInt(rowKv.getValueArray,3))
-
+      println("rowkey:" + new String(rowKv.getRowArray, rowKv.getRowOffset, rowKv.getRowLength))
+//      println("Value:" + new String(rowKv.getValueArray, rowKv.getValueOffset, rowKv.getValueLength, "UTF-8"))
+//      println("Value:" +Bytes.toInt(rowKv.getValueArray,3))
+//      val colName = Bytes.toString(rowKv.getQualifierArray, rowKv.getQualifierOffset, rowKv.getQualifierLength)
+//      val value = Bytes.toString(rowKv.getValueArray, rowKv.getValueOffset,rowKv.getValueLength)
+//      println(colName)
+//      println(value)
       val offset=rowKv.getValueOffset
       val arrbyte=rowKv.getValueArray
       //      ImageUtil.doSmth(arrbyte)
@@ -243,8 +309,6 @@ object HbaseUtil {
       println("rowKv.getValueArray.length:" +rowKv.getValueArray.length)
       println("rowKv.getValueLength:" +rowKv.getValueLength)
       println("rowKv.getValueOffset:" +rowKv.getValueOffset)
-
-
 
     }
     return result

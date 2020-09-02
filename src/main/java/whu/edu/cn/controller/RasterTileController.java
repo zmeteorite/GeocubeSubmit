@@ -10,6 +10,7 @@ import whu.edu.cn.service.RasterTileService;
 import javax.servlet.http.HttpSession;
 import java.text.ParseException;
 
+@CrossOrigin(origins = "*",maxAge = 3600)
 @RestController
 @RequestMapping("/Geocube")
 @Api(tags = "瓦片查询")

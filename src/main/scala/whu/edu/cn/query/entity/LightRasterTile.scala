@@ -2,6 +2,11 @@ package whu.edu.cn.query.entity
 
 import geotrellis.raster.Tile
 
+/**
+  * 矢量Tile结构
+  * @param _measurementName
+  * @param _tile
+  */
 case class LightRasterTile(_measurementName: String, _tile:Tile){
   var measurementName = _measurementName
   var tile = _tile

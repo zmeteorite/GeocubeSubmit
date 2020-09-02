@@ -2,6 +2,12 @@ package whu.edu.cn.query.entity
 
 import java.sql.{DriverManager, ResultSet}
 
+/**
+  * 波段定义
+  * @param _measurementID
+  * @param _measurementName
+  * @param _measurementDType
+  */
 case class Measurement (_measurementID: String = "", _measurementName: String = "", _measurementDType: String = ""){
   var measurementID: String = _measurementID
   var measurementName: String = _measurementName
@@ -28,11 +34,20 @@ case class Measurement (_measurementID: String = "", _measurementName: String = 
 
   def getMeasurementDType: String = measurementDType
 
+  def getMeasurementID: String = measurementID
+
 }
 
 object Measurement{
-  def getMeasurementMetaByMeaAndProKey(measurementKey: String, productKey: String, connAddr: String, user: String, password: String): Measurement = {
-    val conn = DriverManager.getConnection(connAddr, user, password)
+  /**
+    * 查询数据库得到
+    * @param measurementKey
+    * @param productKey
+    * @param conn
+    * @return
+    */
+  def getMeasurementMetaByMeaAndProKey(measurementKey: String, productKey: String, conn:java.sql.Connection): Measurement = {
+//    val conn = DriverManager.getConnection(connAddr, user, password)
     if (conn != null) {
       try {
         val statement = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)

@@ -4,6 +4,20 @@ import java.sql.{DriverManager, ResultSet}
 
 import scala.collection.mutable.ArrayBuffer
 
+/**
+  * 产品属性定义
+  * @param _productID
+  * @param _productName
+  * @param _platform
+  * @param _instrument
+  * @param _CRS
+  * @param _tilesize
+  * @param _cellres
+  * @param _level
+  * @param _phenomenonTime
+  * @param _height
+  * @param _width
+  */
 case class Product (_productID: String = "", _productName: String = "", _platform: String = "",
                     _instrument: String = "", _CRS: String = "",_tilesize: String = "",
                     _cellres: String = "", _level: String = "", _phenomenonTime: String = "",
@@ -44,14 +58,22 @@ case class Product (_productID: String = "", _productName: String = "", _platfor
 
 object Product{
   //return unique product
-  def getProductMetaByKey(productKey: String, connAddr: String, user: String, password: String): Product = {
-    val conn = DriverManager.getConnection(connAddr, user, password)
+  /**
+    *查询Tile的产品属性
+    * @param productKey
+    * @param conn
+    * @return
+    */
+  def getProductMetaByKey(productKey: String, conn:java.sql.Connection):Product = {
+//    val conn = DriverManager.getConnection(connAddr, user, password)
+    //新建连接
     if (conn != null) {
       try {
         val statement = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)
         val sql = "select product_key,product_name,platform_name,sensor_name,tile_size,cell_res,crs,level,phenomenon_time,imaging_length,imaging_width " +
           "from \"SensorLevelAndProduct\" where product_key=" + productKey + ";"
         val rs = statement.executeQuery(sql)
+
         val rsArray = new Array[String](11);
         val columnCount = rs.getMetaData().getColumnCount();
 
@@ -86,7 +108,7 @@ object Product{
 
         val product = Product(productID, productName, productPlatform, productInstrument, productCRS,
           productTileSize, productRes, productLevel, productPhenomenonTime, productHeight, productWidth)
-
+        //通过productID查波段
         val sql2 = "select measurement_key, measurement_name, dtype " +
           "from \"MeasurementsAndProduct\" where product_key=" + productKey + ";"
 
@@ -100,7 +122,7 @@ object Product{
           measurement.setMeasurementDType(rs2.getString(3))
           measurementlist += measurement
         }
-        /*println("product's measurements = ")
+        /*println("product's measur   ements = ")
         measurementlist.foreach(x => print((x.measurementID, x.measurementName, x.measurementDType)))
         println("")*/
         product.setMeasurements(measurementlist)
@@ -115,6 +137,14 @@ object Product{
   }
 
   //may return multiple product
+  /**
+    * 通过名称查询产品，此函数暂时无用
+    * @param productName
+    * @param connAddr
+    * @param user
+    * @param password
+    * @return
+    */
   def getProductMetaByName(productName: String, connAddr: String, user: String, password: String): ArrayBuffer[Product] = {
     val productArray = new ArrayBuffer[Product]()
     val conn = DriverManager.getConnection(connAddr, user, password)
@@ -186,6 +216,13 @@ object Product{
       throw new RuntimeException("Null connection!")
   }
 
+  /**
+    * 查询所有产品，此函数无用
+    * @param connAddr
+    * @param user
+    * @param password
+    * @return
+    */
   def getAllProducts(connAddr: String, user: String, password: String):ArrayBuffer[Product]={
     val productArray = new ArrayBuffer[Product]()
     val conn = DriverManager.getConnection(connAddr, user, password)
@@ -258,6 +295,14 @@ object Product{
       throw new RuntimeException("Null connection!")
   }
 
+  /**
+    * 通过查询条件查询产品，没有用到
+    * @param p
+    * @param connAddr
+    * @param user
+    * @param password
+    * @return
+    */
   def getProductMetaByParams(p: QueryParams, connAddr: String, user: String, password: String): ArrayBuffer[Product] = {
     val conn = DriverManager.getConnection(connAddr, user, password)
     //Temporal params
@@ -521,7 +566,7 @@ object Product{
           message++="product not found！"
         }
         for(key <- productKeysArray){
-          val product = getProductMetaByKey(key, connAddr, user, password)
+          val product = getProductMetaByKey(key, conn)
           productArray.append(product)
         }
         productArray

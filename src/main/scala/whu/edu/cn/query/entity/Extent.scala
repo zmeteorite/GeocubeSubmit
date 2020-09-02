@@ -9,6 +9,19 @@ import org.locationtech.jts.geom.Geometry
 
 import scala.collection.mutable.ArrayBuffer
 
+/**
+  * Tile的空间范围属性 包括ID，格网ID，城市区域ID等，以及空间大小，分辨率和层级
+  * @param _extentID
+  * @param _gridCode
+  * @param _cityCode
+  * @param _cityName
+  * @param _provinceName
+  * @param _districtName
+  * @param _extent
+  * @param _tilesize
+  * @param _cellres
+  * @param _level
+  */
 case class Extent(_extentID: String = "", _gridCode: String = "",
                   _cityCode: String = "", _cityName: String = "",
                   _provinceName: String = "",_districtName: String = "",
@@ -48,8 +61,14 @@ case class Extent(_extentID: String = "", _gridCode: String = "",
 }
 
 object Extent{
-  def getExtentMetaByKey(extentKey: String, connAddr: String, user: String, password: String): whu.edu.cn.query.entity.Extent = {
-    val conn = DriverManager.getConnection(connAddr, user, password)
+  /**
+    * 从数据库查询Tile的空间属性
+    * @param extentKey
+    * @param conn
+    * @return
+    */
+  def getExtentMetaByKey(extentKey: String, conn:java.sql.Connection): whu.edu.cn.query.entity.Extent = {
+//    val conn = DriverManager.getConnection(connAddr, user, password)
     if (conn != null) {
       try {
 
@@ -83,6 +102,14 @@ object Extent{
       throw new RuntimeException("Null connection!")
   }
 
+  /**
+    * 实现Geotrellis的几何对象到格网数组的转换，便于利用空间坐标进行查询
+    * @param x
+    * @param gridDimX
+    * @param gridDimY
+    * @param extent
+    * @return
+    */
   def geom2GridCode(x: Geometry, gridDimX: Long, gridDimY: Long, extent: geotrellis.vector.Extent): ArrayBuffer[String] = {
     val spatialKeyResults: ArrayBuffer[SpatialKey] = new ArrayBuffer[SpatialKey]()
     val gridcodeResults: ArrayBuffer[String] = new ArrayBuffer[String]()

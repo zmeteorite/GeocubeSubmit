@@ -1,6 +1,7 @@
 package whu.edu.cn.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.web.bind.annotation.*;
 import whu.edu.cn.dao.NameDao;
 import whu.edu.cn.dao.ProductDao;
 import whu.edu.cn.dao.Result;
@@ -16,16 +17,13 @@ import whu.edu.cn.util.RsqGsUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@CrossOrigin(origins = "*",maxAge = 3600)
 @RestController
 @Api(tags = "产品查询")
 @RequestMapping("/Geocube")
