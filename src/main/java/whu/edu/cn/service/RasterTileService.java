@@ -52,6 +52,34 @@ public class RasterTileService {
         return QueryRasterTiles.getPyramidTile(queryParams);  //直接返回png bytes
     }
 
+    public String queryTilesTest(double minx,double miny,double maxx,double maxy,
+                                   String rasterProductName,
+                                   String startTime,
+                                   String endTime,
+                                   String level,
+                                   String[] measurements) throws ParseException{
+        QueryParams queryParams = new QueryParams();
+        queryParams.setRasterProductName(rasterProductName);
+//        queryParams.setExtent(112.06494046724021, 28.073457222586285, 115.82181165740333, 32.3597805438586);
+        queryParams.setExtent(minx, miny, maxx, maxy);
+//        queryParams.setTime("2013-01-01 02:30:59.415", "2019-01-01 02:30:59.41");
+//        queryParams.setLevel("999");
+        queryParams.setTime(startTime, endTime);
+        queryParams.setLevel(level);
+        queryParams.setMeasurements(measurements);
+
+
+        /*queryParams.setRasterProductName("LC08_L1TP_ARD");
+        queryParams.setTime("2013-04-14 02:32:35.004", "2013-04-14 02:32:37.004"); //2013-04-14 02:32:36.004
+        queryParams.setMeasurements(new String[]{"Green"});*/
+
+        /*Tuple2<SpaceTimeBandKey, Tile> tile = QueryRasterTiles.getTiles(queryParams)._1[0];
+        return whu.edu.cn.query.util.TileSerializer.tile2PngBytes(tile._2);*/
+        QueryRasterTiles.getTiles(queryParams);
+
+        return "测试瓦片查询结束";  //直接返回png bytes
+    }
+
     /*public byte[] queryTile(int level,
                             int column,
                             int row,

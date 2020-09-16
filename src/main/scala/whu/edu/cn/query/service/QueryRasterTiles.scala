@@ -69,9 +69,13 @@ object QueryRasterTiles {
     val queryParams = new QueryParams
 //    queryParams.setRasterProductNames(Array("LC08_L1TP_ARD_EO", "LC8_L1TP_TMS_EO"))
     queryParams.setRasterProductNames(Array("LC08_L1TP_ARD_EO"))
-    queryParams.setExtent(112.46494046724021, 29.073457222586285, 115.02181165740333, 31.2597805438586)
+//    queryParams.setExtent(112.06494046724021, 28.073457222586285, 115.82181165740333, 32.3597805438586)
+    queryParams.setExtent(116.01494046724021, 33.073457222586285, 117.9181165740333, 32.9597805438586)
     queryParams.setTime("2013-01-01 02:30:59.415", "2019-01-01 02:30:59.41")
-    queryParams.setMeasurements(Array("Green", "Near-Infrared","Red","Blue"))
+    queryParams.setLevel("4000")
+//    queryParams.setMeasurements(Array("Green", "Near-Infrared","Red","Blue"))
+    queryParams.setMeasurements(Array("Green", "Blue"))
+//    queryParams.setMeasurements(Array("Coastal"))
 
 
 
@@ -496,10 +500,10 @@ object QueryRasterTiles {
         var queriedRasterTiles = ArrayBuffer[RasterTile]()
 //        val CellMap = HbaseUtil.getTileCellsMap(tileIDs,"hbase_raster_regions","rasterData","tile")
 //        val MetaMap = HbaseUtil.getTileMetasMap(tileIDs,"hbase_raster_regions","rasterData","metaData")
-        var DataMap = HbaseUtil.getTileData("hbase_raster_regions",tileIDs)
-//        tileAndDimensionKeys.foreach(keys => queriedRasterTiles.append(initRasterTile(keys(0), keys(1), keys(2), keys(3), keys(4))))
+//        var DataMap = HbaseUtil.getTileData("hbase_raster_regions",tileIDs)
+        tileAndDimensionKeys.foreach(keys => queriedRasterTiles.append(initRasterTile(keys(0), keys(1), keys(2), keys(3), keys(4))))
 //        queriedRasterTiles=initRasterTiles(CellMap,MetaMap,tileAndDimensionKeys)
-        queriedRasterTiles=initRasterTiles2(DataMap,tileAndDimensionKeys)
+//        queriedRasterTiles=initRasterTiles2(DataMap,tileAndDimensionKeys)
         println("Return " + queriedRasterTiles.length + " tiles of " + rasterProductName + " product: ")
         queriedRasterTiles.foreach(x=>print("{tile:{ID:" + x.ID + ", ProductID:" + x.productID + "}}"))
         println()

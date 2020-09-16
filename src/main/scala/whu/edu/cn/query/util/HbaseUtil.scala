@@ -42,17 +42,17 @@ object HbaseUtil {
     //insertTable("1", "i", "age", "22")
 //        scanDataFromHTable("hbase_raster_regions", "rasterData","metaData")
 //        getRow("hbase_vector","Hainan_Daguangba_School_Vector_c4dde473-d024-4e54-a5b8-b2ddeb57ef5c")
-//    getTileMeta("hbase_raster_regions","000~0000000013","rasterData","metaData")
+    getTileMeta("hbase_raster_regions","000~0000000013","rasterData","metaData")
 //    getTileCell("hbase_raster_regions","000~0000000013","rasterData","tile")
 //    getVectorCell("hbase_vector","fx_xx_ffd4bce2-3cfe-4453-980f-bd5ab4a61db1","vectorData","tile")
-//    getVectorMeta("hbase_vector","fx_xx_ffd4bce2-3cfe-4453-980f-bd5ab4a61db1","vectorData","metaData")
+//    getVectorMeta("hbase_vector","Hainan_Daguangba_ST_Vector_0dda2217-659d-4db4-b6ff-0c1c244896a6","vectorData","metaData")
 //    getVectorTilesMeta("hbase_vector","fx_xx_ffd4bce2-3cfe-4453-980f-bd5ab4a61db1","vectorData","tilesMetaData")
     //    deleteRecord("1","i","name")
 //    getRow("hbase_raster_regions","000~0000000013")
 //    val rowlist = ArrayBuffer("000~0000000013","001~0000000014","002~0000000015","003~0000000016","004~0000000017","005~0000000018","006~0000000019","002~0000000020")
     val rowlist = ArrayBuffer("000~0000000013","001~0000000014")
     //    getTileCellsMap(rowlist,"hbase_raster_regions","rasterData","tile")
-    getTileData("hbase_raster_regions",rowlist)
+//    getTileData("hbase_raster_regions",rowlist)
     close()
     println("Hit enter to exit")
     StdIn.readLine()
@@ -152,7 +152,7 @@ object HbaseUtil {
       get.addColumn(Bytes.toBytes(family),Bytes.toBytes(col))
       val result: Result = table.get(get)
       val res = Bytes.toString(result.getValue(Bytes.toBytes(family),Bytes.toBytes(col)))
-//      println(res)
+      println(res)
       res
     }else{
       throw new RuntimeException("No data of rowkey = " + rowKey + " in HBase!")
@@ -227,7 +227,7 @@ object HbaseUtil {
       val res = new String(rowKv.getValueArray, rowKv.getValueOffset, rowKv.getValueLength, "UTF-8")
 
       //      val res = result.getValue(Bytes.toBytes(family),Bytes.toBytes(col))
-//      println(res)
+      println(res)
       res
     }else{
       throw new RuntimeException("No data of rowkey = " + rowKey + " in HBase!")

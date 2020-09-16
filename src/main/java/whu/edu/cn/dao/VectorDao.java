@@ -18,4 +18,6 @@ public class VectorDao {
     private String LowerRightLat;
     private String LowerRightLong;
 
+    private String Properties;
+
 }

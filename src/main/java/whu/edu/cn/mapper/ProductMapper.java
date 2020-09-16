@@ -27,31 +27,19 @@ public interface ProductMapper extends BaseMapper<Product> {
     @Select("Select distinct measurement_name from \"MeasurementsAndProduct\" where product_name = #{ProductName}")
     List<MeasurementName> getMeasurementNamesByName(String ProductName);
 
-    @Select("Select * from \"SensorLevelAndProduct\"where product_key = #{ProductKey}" )
-    Product getProductById(Integer ProductKey);
-
     @Select("Select * from \"SensorLevelAndProduct\"where product_name = #{ProductName}" )
     List<Product> getEOProductsByName(String ProductName);
 
     @Select("Select * from gc_product where product_name = #{ProductName}" )
     List<VectorDao> getVectorProductsByName(String ProductName);
 
-    @Select("Select * from gc_extent where extent_key = #{ExtentKey}")
-    Extent getExtentByID(Integer ExtentKey);
 
-    @Select("Select * from gc_tile_quality where tile_quality_key = #{TileQualityKey}")
-    TileQuality getTileQualityByID(Integer TileQualityKey);
-
-    @Select("Select * from gc_measurement where measurement_key = #{MeasurementKey}")
-    Measurement getMeasurementByID(Integer MeasurementKey);
-
-//    @Select("Select distinct product_name from \"SensorLevelAndProduct\"")
     @Select("Select distinct product_name,product_type from gc_product")
     List<NameDao> getAllProductNames();
 
     List<Product> getProductsByParams(@Param("productName") String ProductName, @Param("startTime") Timestamp StartTime, @Param("endTime") Timestamp EndTime, @Param("WKT") String WKT);
 
-    List<Product> selectProduct();
+
 
 
 }

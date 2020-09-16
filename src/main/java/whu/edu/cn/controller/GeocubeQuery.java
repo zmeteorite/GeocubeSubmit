@@ -6,7 +6,6 @@ import whu.edu.cn.dao.NameDao;
 import whu.edu.cn.dao.ProductDao;
 import whu.edu.cn.dao.Result;
 import whu.edu.cn.dao.VectorDao;
-import whu.edu.cn.entity.Extent;
 import whu.edu.cn.entity.MeasurementName;
 import whu.edu.cn.entity.Product;
 import whu.edu.cn.mapper.ProductMapper;
@@ -40,7 +39,7 @@ public class GeocubeQuery {
     VectorInfoService vectorInfoService;
 
     @GetMapping("/GetCapabilities")
-    @ApiOperation(value = "获取GeoCube所有产品信息",notes = "查询所有产品")
+    @ApiOperation(value = "获取GeoCube所有EO产品信息",notes = "查询所有EO")
     public Result<?> GetAllProduct(){
         List<Product> products = productService.getallproducts();
         List<ProductDao> productDaos = geoUtil.TransformProducts(products);
@@ -48,20 +47,18 @@ public class GeocubeQuery {
     }
 
     @GetMapping("/GetVectorCapabilities")
-    @ApiOperation(value = "获取GeoCube所有产品信息",notes = "查询所有产品")
+    @ApiOperation(value = "获取GeoCube所有Vector产品信息",notes = "查询所有Vector")
     public Result<?> GetVectorProducts(){
         List<VectorDao> vectorDaos= productMapper.getVectorProducts();
+        vectorDaos.forEach(vectorDao -> {
+            vectorDao.setProperties(vectorInfoService.queryVectorProperty(vectorDao.getProductName()));
+        });
         return Result.ok(vectorDaos);
     }
 
-    @GetMapping("/GetExtent")
-    @ApiOperation(value = "根据Key获取Extent",notes = "Extent测试")
-    public Extent GetExtentByID(@RequestParam("id") Integer id){
-        return productService.getExtentById(id);
-    }
 
     @GetMapping("/GetProductNames")
-    @ApiOperation(value = "获取所有产品的Name",notes = "查询所有产品名")
+    @ApiOperation(value = "获取所有产品的Name(和Type）",notes = "查询所有产品名")
     public Result<?> GetALLProductNames(){
         List<NameDao> nameDaos = productService.getallproductnames();
         return Result.ok(nameDaos);
@@ -77,8 +74,11 @@ public class GeocubeQuery {
         }
         else if(type.equals("Vector")){
             List<VectorDao> vectorDaos=productMapper.getVectorProductsByName(name);
+            String properties = vectorInfoService.queryVectorProperty(name);
+            vectorDaos.forEach(vectorDao -> {
+                vectorDao.setProperties(properties);
+            });
             return Result.ok(vectorDaos);
-//            return  GetProductsByParamsAndMeasurement(name,"","","Vector",-180.0,-90.0,180.0,90.0,null);
         } else{
             return Result.error("ProductType Error!");
         }
@@ -91,14 +91,9 @@ public class GeocubeQuery {
         return Result.ok(measurements);
     }
 
-    @GetMapping("/GetProducts")
-    @ApiOperation(value = "MP sql 测试",notes = "Mybatis测试")
-    public List<Product> GetAllProducts(){
-        return productService.getproducts();
-    }
 
     @GetMapping("/GetProductsByParams")
-    @ApiOperation(value = "时空查询",notes = "测试")
+    @ApiOperation(value = "EO时空查询",notes = "EO查询")
     public Result<?> GetProductsByParams(@RequestParam(value = "productName",required = false) String productName,
                                              @RequestParam(value = "startTime",required = false) String StartTime,
                                              @RequestParam(value = "endTime",required = false) String EndTime,
@@ -146,7 +141,7 @@ public class GeocubeQuery {
     }
 
     @GetMapping("/GetProductsByParamsAndType")
-    @ApiOperation(value = "添加数据类型查询",notes = "测试")
+    @ApiOperation(value = "总查询",notes = "总条件查询")
     public Result<?> GetProductsByParamsAndMeasurement(@RequestParam(value = "productName",required = false) String productName,
                                                     @RequestParam(value = "startTime",required = true) String StartTime,
                                                     @RequestParam(value = "endTime",required = true) String EndTime,

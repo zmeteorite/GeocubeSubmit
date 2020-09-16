@@ -56,6 +56,20 @@ public class RasterTileController {
                 session.getAttribute("measurement").toString());
         return bytes;
     }
+    @ApiOperation(value = "测试瓦片",notes = "测试瓦片查询效率")
+    @GetMapping(value = "/RasterTilesTest")
+    public String getRasterTile(@RequestParam(value = "productName",required = true,defaultValue = "LC08_L1TP_ARD_EO") String productName,
+                                @RequestParam(value = "startTime",required = true) String StartTime,
+                                @RequestParam(value = "endTime",required = true) String EndTime,
+                                @RequestParam(value = "level",required = true) String Level,
+                                @RequestParam(value = "minx",required = false,defaultValue = "116.01494046724021")double minx,
+                                @RequestParam(value = "miny",required = false,defaultValue = "33.073457222586285")double miny,
+                                @RequestParam(value = "maxx",required = false,defaultValue = "117.9181165740333")double maxx,
+                                @RequestParam(value = "maxy",required = false,defaultValue = "32.9597805438586")double maxy,
+                                @RequestParam(value="measurement",required = false) String[] measurements) throws ParseException {
+
+        return rasterTileService.queryTilesTest(minx,miny,maxx,maxy,productName,StartTime,EndTime,Level,measurements);
+    }
 
     /*Test
     @RequestMapping(value = "/getTile",produces = MediaType.IMAGE_PNG_VALUE)
